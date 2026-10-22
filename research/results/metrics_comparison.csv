@@ -1,0 +1,4 @@
+variant,variant_label,total_tasks,resolved_tasks,pass_rate,avg_turns,avg_lines_changed,avg_runtime_sec
+baseline,Variant A: Baseline,4,0,0.0,1.0,0.0,1.8425
+codeguardian_full,Variant C: CodeGuardian Full (Ours),4,4,100.0,1.75,2.25,3.5975
+graph_guided,Variant B: Graph-Guided,4,4,100.0,1.0,3.0,1.905

@@ -1,0 +1,95 @@
+name: codeguardian
+version: 1.0.0
+description: >
+  Autonomous Software Engineering Agent powered by Gemma 4 for Kaggle Developer Agent Competition.
+  Combines graph-guided reasoning, minimal patch generation, and failure-guided recovery.
+
+competition:
+  name: "Google Gemma 4 Developer Agent Competition"
+  submission_format: "git_diff"
+  output_artifact: "model_patch.diff"
+  max_iterations: 8
+  timeout_per_task_seconds: 300
+
+model:
+  provider: "gemma"
+  default_model: "gemma-4-it"
+  temperature: 0.1
+  top_p: 0.95
+  max_tokens: 4096
+  context_window: 131072
+
+stages:
+  - name: "repository_recon"
+    skill: "agent/skills/repository_recon/SKILL.md"
+    description: "Map directory structure, locate relevant modules, entrypoints, and test suites."
+    timeout_seconds: 45
+
+  - name: "bug_localization"
+    skill: "agent/skills/bug_localization/SKILL.md"
+    description: "Identify faulty files, classes, methods, and reproduction test cases from bug reports."
+    timeout_seconds: 60
+
+  - name: "code_graph_analysis"
+    skill: "agent/skills/code_graph/SKILL.md"
+    description: "Construct NetworkX AST call and dependency graph to track dataflow and symbol dependencies."
+    timeout_seconds: 45
+
+  - name: "minimal_patch_generation"
+    skill: "agent/skills/patch_generation/SKILL.md"
+    description: "Synthesize targeted minimal unified diff correcting defects without collateral changes."
+    timeout_seconds: 60
+
+  - name: "failure_guided_recovery"
+    skill: "agent/skills/failure_recovery/SKILL.md"
+    description: "Execute validation test suite, parse tracebacks on failure, revise hypothesis, and iteratively re-patch."
+    max_recovery_turns: 3
+    timeout_seconds: 90
+
+tools:
+  repository:
+    - name: "list_files"
+      module: "agent.tools.repository_tools"
+      function: "list_files"
+    - name: "search_symbol"
+      module: "agent.tools.repository_tools"
+      function: "search_symbol"
+    - name: "read_file_snippet"
+      module: "agent.tools.repository_tools"
+      function: "read_file_snippet"
+    - name: "find_test_files"
+      module: "agent.tools.repository_tools"
+      function: "find_test_files"
+
+  graph:
+    - name: "build_code_graph"
+      module: "agent.tools.graph_tools"
+      function: "build_code_graph"
+    - name: "query_symbol_dependencies"
+      module: "agent.tools.graph_tools"
+      function: "query_symbol_dependencies"
+    - name: "find_shortest_dependency_path"
+      module: "agent.tools.graph_tools"
+      function: "find_shortest_dependency_path"
+
+  validation:
+    - name: "run_pytest"
+      module: "agent.tools.validation_tools"
+      function: "run_pytest"
+    - name: "validate_patch_syntax"
+      module: "agent.tools.validation_tools"
+      function: "validate_patch_syntax"
+    - name: "apply_patch_dry_run"
+      module: "agent.tools.validation_tools"
+      function: "apply_patch_dry_run"
+    - name: "parse_traceback"
+      module: "agent.tools.validation_tools"
+      function: "parse_traceback"
+
+evaluation:
+  benchmark_harness: "swe_bench_kaggle_harness"
+  metrics:
+    - "pass_at_1"
+    - "localization_top_k"
+    - "patch_line_minimality"
+    - "recovery_resolution_rate"
